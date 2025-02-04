@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Estacionamento</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="top-bar">
+            <span id="currentTime" class="time">--:--</span>
+        </div>
+        <nav>
+            <button class="menu-btn">☰</button>
+            <h1>Estacionamento</h1>
+            <div class="right-icons">
+                <button class="search-btn">🔍</button>
+            </div>
+        </nav>
+    </header>
+
+    <div class="status-panel">
+        <div class="status-item">
+            <span class="number">0</span>
+            <span class="label">RESERVA</span>
+        </div>
+        <div class="status-item active">
+            <span class="number">0</span>
+            <span class="label">ESTACIONADO</span>
+        </div>
+        <div class="status-item">
+            <span class="number">0</span>
+            <span class="label">SAÍDA</span>
+        </div>
+        <div class="status-item">
+            <span class="number">0</span>
+            <span class="label">ENTREGUE</span>
+        </div>
+    </div>
+
+    <div class="vehicle-list">
+        <!-- Veículos serão inseridos aqui dinamicamente -->
+    </div>
+
+    <footer>
+        <div class="navigation-buttons">
+            <button class="park-btn">ESTACIONAR</button>
+            <button class="button-saida" onclick="window.location.href='saida.html'">SAÍDA</button>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

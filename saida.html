@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Saída de Veículos</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <header>
+        <div class="top-bar">
+            <span id="currentTime" class="time">--:--</span>
+        </div>
+        <nav>
+            <button class="menu-btn" onclick="window.location.href='index.html'">←</button>
+            <h1>Saída de Veículos</h1>
+        </nav>
+    </header>
+
+    <div class="search-box">
+        <input type="text" id="placaBusca" placeholder="Digite a placa do veículo">
+        <button onclick="window.saidaSystem.buscarVeiculo(document.getElementById('placaBusca').value)">
+            Buscar
+        </button>
+    </div>
+
+    <div id="vehicleDetails"></div>
+
+    <div class="payment-section" id="paymentSection" style="display: none;">
+        <h3>Informações de Pagamento</h3>
+        <div class="payment-details">
+            <div class="time-info">
+                <p>Entrada: <span id="horaEntrada">--:--</span></p>
+                <p>Saída: <span id="horaSaida">--:--</span></p>
+                <p>Tempo Total: <span id="tempoTotal">--:--</span></p>
+            </div>
+            
+            <div class="payment-info">
+                <p>Valor Total: R$ <span id="valorTotal">0,00</span></p>
+                <select id="formaPagamento">
+                    <option value="">Selecione a forma de pagamento</option>
+                    <option value="dinheiro">Dinheiro</option>
+                    <option value="cartao">Cartão</option>
+                    <option value="pix">PIX</option>
+                </select>
+            </div>
+
+            <textarea id="observacoes" placeholder="Observações"></textarea>
+            
+            <button class="confirm-btn" onclick="window.saidaSystem.confirmarSaida()">
+                Confirmar Saída
+            </button>
+        </div>
+    </div>
+
+    <script src="saida.js"></script>
+</body>
+</html>
