@@ -341,3 +341,50 @@ footer {
 .form-buttons button:hover {
     opacity: 0.9;
 }
+
+.status-item {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.status-item:hover {
+    opacity: 0.8;
+}
+
+.payment, .payment-method, .obs {
+    color: #666;
+    font-size: 0.9em;
+}
+
+.obs {
+    font-style: italic;
+}
+
+.search-overlay {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    background-color: rgba(0, 0, 0, 0.5);
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    z-index: 1000;
+}
+
+.search-container {
+    background-color: white;
+    padding: 20px;
+    border-radius: 8px;
+    width: 90%;
+    max-width: 400px;
+}
+
+.search-container input {
+    width: 100%;
+    padding: 10px;
+    margin: 10px 0;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+}

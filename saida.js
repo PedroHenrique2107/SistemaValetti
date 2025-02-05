@@ -62,12 +62,13 @@ class SaidaSystem {
             this.mostrarMensagem('Digite uma placa para buscar');
             return;
         }
-
+    
         const placaNormalizada = placaOriginal.toUpperCase();
         const veiculo = this.veiculos.find(v => 
-            v.placa === placaNormalizada && v.status === 'estacionado'
+            v.placa === placaNormalizada && 
+            (v.status === 'estacionado' || v.status === 'saida')
         );
-
+    
         if (veiculo) {
             this.veiculoAtual = veiculo;
             this.mostrarDetalhesVeiculo(veiculo);
@@ -148,11 +149,8 @@ class SaidaSystem {
         }
     
         try {
-            // Carrega os dados mais recentes do localStorage
             const dadosAtuais = JSON.parse(localStorage.getItem('estacionamentoData')) || {};
             const veiculos = dadosAtuais.veiculos || [];
-    
-            // Encontra o índice do veículo atual
             const veiculoIndex = veiculos.findIndex(v => v.placa === this.veiculoAtual.placa);
     
             if (veiculoIndex !== -1) {
@@ -165,7 +163,6 @@ class SaidaSystem {
                     this.veiculoAtual.tipo
                 );
     
-                // Atualiza o veículo com status finalizado
                 veiculos[veiculoIndex] = {
                     ...veiculos[veiculoIndex],
                     status: 'finalizado',
@@ -175,24 +172,21 @@ class SaidaSystem {
                     observacoes: document.getElementById('observacoes').value
                 };
     
-                // Atualiza o localStorage com os dados atualizados
                 const dadosAtualizados = {
                     veiculos: veiculos,
                     contadores: {
                         reserva: 0,
                         estacionado: veiculos.filter(v => v.status === 'estacionado').length,
-                        saida: 0,
+                        saida: veiculos.filter(v => v.status === 'saida').length,
                         entregue: veiculos.filter(v => v.status === 'finalizado').length
                     }
                 };
     
-                console.log('Dados atualizados:', dadosAtualizados);
                 localStorage.setItem('estacionamentoData', JSON.stringify(dadosAtualizados));
-                
                 this.mostrarMensagem('Saída registrada com sucesso!', 'sucesso');
                 
                 setTimeout(() => {
-                    window.location.href = `index.html?t=${new Date().getTime()}`;
+                    window.location.href = 'index.html';
                 }, 2000);
             }
         } catch (error) {
