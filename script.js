@@ -8,29 +8,135 @@ class EstacionamentoSystem {
             entregue: 0
         };
         // Configuração das tarifas por tipo de cliente
-        this.tarifas = {
-            avulso: {
-                primeiros20min: 5.00,
-                primeiraHora: 30.00,
-                horaAdicional: 10.00,
-                nome: "Avulso"
-            },
-            mensalista: {
-                primeiros20min: 3.00,
-                primeiraHora: 20.00,
-                horaAdicional: 5.00,
-                nome: "Mensalista"
-            },
-            convenio: {
-                primeiros20min: 4.00,
-                primeiraHora: 25.00,
-                horaAdicional: 8.00,
-                nome: "Convênio"
-            }
+    this.tarifas = {
+        avulso: {
+            primeiros20min: 5.00,
+            primeiraHora: 20.00,
+            horaAdicional: 10.00,
+            nome: "Avulso",
+            tipoCobranca: "hora" // indica que cobra por hora
+        },
+        mensalista: {
+            valorFixo: 380.00, // valor fixo mensal
+            nome: "Mensalista",
+            tipoCobranca: "fixo" // indica que é valor fixo
+        },
+        simone_scorsi: {
+            primeiros20min: 4.00,
+            primeiraHora: 25.00,
+            horaAdicional: 8.00,
+            nome: "Simone Scorsi",
+            tipoCobranca: "hora"
+        },
+        bar_do_alemao: {
+            primeiros20min: 10.00,
+            primeiraHora: 10.00,
+            horaAdicional: 10.00,
+            nome: "Bar do Alemão",
+            tipoCobranca: "hora"
+        },
+         lbs_adicionais: {
+            primeiros20min: 5.00,
+            primeiraHora: 20.00,
+            horaAdicional: 10.00,
+            nome: "LBS Adicionais",
+            tipoCobranca: "hora"
+        },
+        excedente_bdi: {
+            primeiros20min: 5.00,
+            primeiraHora: 20.00,
+            horaAdicional: 10.00,
+            nome: "Excedente BDI",
+            tipoCobranca: "hora"
+        },
+        condominio: {
+            valorFixo: 0.00, // cortesia do condominio
+            nome: "Condominio",
+            tipoCobranca: "fixo" // indica que é valor fixo
+        },
+        diaria: {
+            valorFixo: 50.00, // valor fixo
+            nome: "Diaria",
+            tipoCobranca: "fixo" // indica que é valor fixo
+        },
+        lavagem_70: {
+            valorFixo: 70.00, // valor fixo
+            nome: "Lavagem 70,00",
+            tipoCobranca: "fixo" // indica que é valor fixo
+        },
+        lavagem_80: {
+            valorFixo: 80.00, // valor fixo
+            nome: "Lavagem 80,00",
+            tipoCobranca: "fixo" // indica que é valor fixo
+        },
+        lavagem_90: {
+            valorFixo:  80.00, // valor fixo
+            nome: "Lavagem 90,00",
+            tipoCobranca: "fixo" // indica que é valor fixo
+        },
+        lavagem_100: {
+            valorFixo: 100.00, // valor fixo 
+            nome: "Lavagem 100,00",
+            tipoCobranca: "fixo" // indica que é valor fixo
+        },
+
         };
         this.abaAtual = 'estacionado'; // Adicionar este controle
         this.init();
     }
+
+    calcularValor(minutosTotais, tipoCliente) {
+        const tarifa = this.tarifas[tipoCliente];
+        
+        // Se for tarifa fixa, retorna o valor fixo
+        if (tarifa.tipoCobranca === 'fixo') {
+            return tarifa.valorFixo;
+        }
+    
+        // Para tarifas por hora
+        let valor = 0;
+        
+        // Aqui você coloca a mesma lógica que usou no saida.js
+        if (minutosTotais <= 20) {           // Primeiros 20 minutos
+            valor = tarifa.primeiros20min;
+        } else if (minutosTotais <= 60) {    // Até 1 hora
+            valor = tarifa.primeiraHora;
+        } else {                             // Após 1 hora
+            const horasAdicionais = Math.ceil((minutosTotais - 60) / 60);
+            valor = tarifa.primeiraHora + (horasAdicionais * tarifa.horaAdicional);
+        }
+        
+        return valor;
+    }
+
+    // Se você quiser usar a versão com mais faixas de tempo, use este modelo:
+    /*
+    calcularValor(minutosTotais, tipoCliente) {
+        const tarifa = this.tarifas[tipoCliente];
+        
+        if (tarifa.tipoCobranca === 'fixo') {
+            return tarifa.valorFixo;
+        }
+    
+        let valor = 0;
+        
+        if (minutosTotais <= 20) {           // Até 20 minutos
+            valor = tarifa.primeiros20min;
+        } else if (minutosTotais <= 30) {    // De 21 a 30 minutos
+            valor = tarifa.ate30min;
+        } else if (minutosTotais <= 60) {    // De 31 a 60 minutos
+            valor = tarifa.primeiraHora;
+        } else if (minutosTotais <= 120) {   // De 1 a 2 horas
+            valor = tarifa.primeiraHora + tarifa.horaAdicional;
+        } else {                             // Mais de 2 horas
+            const horasAdicionais = Math.ceil((minutosTotais - 120) / 60);
+            valor = tarifa.primeiraHora + tarifa.horaAdicional + 
+                   (horasAdicionais * tarifa.demaisHoras);
+        }
+        
+        return valor;
+    }
+    */
 
     init() {
         // Adiciona listeners apenas se os elementos existirem
@@ -160,25 +266,34 @@ class EstacionamentoSystem {
 
     mostrarFormularioEstacionamento() {
         const html = `
-            <div class="form-overlay" id="formOverlay">
-                <div class="form-container">
-                    <h2>Registrar Veículo</h2>
-                    <input type="text" id="placa" placeholder="Placa" required>
-                    <input type="text" id="modelo" placeholder="Modelo" required>
-                    <select id="tipo" required>
-                        <option value="">Selecione o tipo</option>
-                        <option value="avulso">Avulso</option>
-                        <option value="mensalista">Mensalista</option>
-                        <option value="convenio">Convênio</option>
-                    </select>
-                    <input type="text" id="setor" placeholder="Setor" required>
-                    <input type="text" id="vaga" placeholder="Vaga" required>
-                    <div class="form-buttons">
-                        <button class="cancel-btn" id="cancelarBtn">Cancelar</button>
-                        <button class="confirm-btn" id="confirmarBtn">Confirmar</button>
-                    </div>
+             <div class="form-overlay" id="formOverlay">
+            <div class="form-container">
+                <h2>Registrar Veículo</h2>
+                <input type="text" id="placa" placeholder="Placa" oninput="this.value = this.value.toUpperCase()" maxlength="7" required>
+                <input type="text" id="modelo" placeholder="Modelo" required>
+                <select id="tipo" required>
+                    <option value="">Selecione o tipo</option>
+                    <option value="avulso">Avulso</option>
+                    <option value="mensalista">Mensalista</option>
+                    <option value="diaria">Diaria</option>
+                    <option value="bar_do_alemao">Bar do Alemão</option>
+                    <option value="lavagem_70">Lavagem 70,00</option>
+                    <option value="lavagem_80">Lavagem 80,00</option>
+                    <option value="lavagem_90">Lavagem 90,00</option>
+                    <option value="lavagem_100">Lavagem 100,00</option>
+                </select>
+                <select id="setor" required>
+                    <option value="">Selecione o setor</option>
+                    <option value="TER">TER</option>
+                    <option value="SUB">SUB</option>
+                    <option value="BAR">BAR</option>
+                </select>
+                <div class="form-buttons">
+                    <button class="cancel-btn" id="cancelarBtn">Cancelar</button>
+                    <button class="confirm-btn" id="confirmarBtn">Confirmar</button>
                 </div>
             </div>
+        </div>
         `;
         document.body.insertAdjacentHTML('beforeend', html);
 
@@ -199,37 +314,40 @@ class EstacionamentoSystem {
     }
 
     registrarEntrada() {
-        const placa = document.getElementById('placa').value.toUpperCase();
+        const placa = document.getElementById('placa').value;
         const modelo = document.getElementById('modelo').value;
         const tipo = document.getElementById('tipo').value;
-        const setor = document.getElementById('setor').value.toUpperCase();
-        const vaga = document.getElementById('vaga').value;
-
-        if (!placa || !modelo || !tipo || !setor || !vaga) {
+        const setor = document.getElementById('setor').value;
+    
+        if (!placa || !modelo || !tipo || !setor) {
             this.mostrarMensagem('Preencha todos os campos');
             return;
         }
-
+    
         const veiculoExistente = this.veiculos.find(v => 
             v.placa === placa && v.status === 'estacionado'
         );
-
+    
         if (veiculoExistente) {
             this.mostrarMensagem('Já existe um veículo com esta placa estacionado');
             return;
         }
-
+    
+        const numeroVaga = this.veiculos.length + 1;
+    
         const novoVeiculo = {
             placa,
             modelo,
             tipo,
             setor,
-            vaga,
+            vaga: numeroVaga,
             status: 'estacionado',
-            horaEntrada: new Date().toISOString()
+            horaEntrada: new Date().toISOString(),
+            id: Date.now()
         };
-
+    
         this.veiculos.push(novoVeiculo);
+        this.atualizarContadores(); // Adiciona esta linha para atualizar os contadores
         this.salvarDados();
         this.fecharFormulario();
         this.atualizarInterface();
@@ -246,12 +364,22 @@ class EstacionamentoSystem {
     }
 
     atualizarContadores() {
+        // Atualiza os contadores baseado no status atual dos veículos
         this.contadores = {
-            reserva: 0,
+            reserva: this.veiculos.filter(v => v.status === 'reserva').length,
             estacionado: this.veiculos.filter(v => v.status === 'estacionado').length,
             saida: this.veiculos.filter(v => v.status === 'saida').length,
             entregue: this.veiculos.filter(v => v.status === 'finalizado').length
         };
+    
+        // Atualiza os números na interface
+        const contadoresElements = document.querySelectorAll('.status-item .number');
+        if (contadoresElements.length >= 4) {
+            contadoresElements[0].textContent = this.contadores.reserva;
+            contadoresElements[1].textContent = this.contadores.estacionado;
+            contadoresElements[2].textContent = this.contadores.saida;
+            contadoresElements[3].textContent = this.contadores.entregue;
+        }
     }
 
     calcularTempoEstacionado(horaEntrada) {
@@ -265,18 +393,27 @@ class EstacionamentoSystem {
     }
 
     registrarSaida(placa) {
-        const veiculo = this.veiculos.find(v => v.placa === placa);
+        const veiculo = this.veiculos.find(v => 
+            v.placa === placa && 
+            v.status === 'estacionado'
+        );
+    
         if (veiculo) {
-            // Atualiza o status para 'saida' antes de redirecionar
+            // Atualiza o status para 'saida'
             veiculo.status = 'saida';
+            
+            // Salva as alterações no localStorage
             this.salvarDados();
+            
+            // Atualiza os contadores e a interface
+            this.atualizarContadores();
             this.atualizarInterface();
-            window.location.href = `saida.html?placa=${placa}`;
+            
+            // Redireciona para a página de saída
+            window.location.href = `saida.html?placa=${placa}&id=${veiculo.id}`;
         }
     }
-
     salvarDados() {
-        this.atualizarContadores();
         const dados = {
             veiculos: this.veiculos,
             contadores: this.contadores
