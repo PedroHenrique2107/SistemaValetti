@@ -1,0 +1,22 @@
+FROM node:20-alpine
+
+WORKDIR /app
+
+# Instalar dependências do sistema
+RUN apk add --no-cache libc6-compat
+
+# Copiar arquivos de dependências
+COPY package.json ./
+RUN npm install
+
+# Copiar código fonte
+COPY . .
+
+# Gerar Prisma Client
+RUN npx prisma generate
+
+# Expor porta
+EXPOSE 3000
+
+# Comando padrão (será sobrescrito pelo docker-compose)
+CMD ["npm", "run", "dev"]

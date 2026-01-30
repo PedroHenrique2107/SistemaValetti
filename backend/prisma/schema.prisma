@@ -1,0 +1,412 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ============================================
+// USUÁRIOS E AUTENTICAÇÃO
+// ============================================
+
+enum UserRole {
+  SUPER_ADMIN
+  ADMINISTRADOR
+  GERENTE_OPERACIONAL
+  SUPERVISOR
+  FINANCEIRO
+  RECEPCIONISTA
+  MANOBRISTA
+  MENSALISTA
+  AUDITOR
+}
+
+enum UserStatus {
+  ATIVO
+  INATIVO
+  BLOQUEADO
+}
+
+model User {
+  id            String      @id @default(uuid())
+  email         String      @unique
+  password      String
+  name          String
+  phone         String?
+  cpf           String?     @unique
+  role          UserRole    @default(MANOBRISTA)
+  status        UserStatus  @default(ATIVO)
+  parkingId     String?
+  parking       Parking?    @relation(fields: [parkingId], references: [id])
+  
+  // Relacionamentos
+  sessions      Session[]
+  vehicles      Vehicle[]
+  checkIns      CheckIn[]   @relation("CheckInManobrista")
+  checkOuts     CheckOut[]  @relation("CheckOutManobrista")
+  monthlyPlans  MonthlyPlan[]  @relation("MonthlyPlanUser")
+  
+  // Metadados
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+  lastLoginAt   DateTime?
+  
+  @@index([email])
+  @@index([parkingId])
+  @@index([role])
+}
+
+model Session {
+  id            String      @id @default(uuid())
+  userId        String
+  user          User        @relation(fields: [userId], references: [id], onDelete: Cascade)
+  token         String      @unique
+  refreshToken  String?     @unique
+  ipAddress     String?
+  userAgent     String?
+  expiresAt     DateTime
+  createdAt     DateTime    @default(now())
+  
+  @@index([userId])
+  @@index([token])
+}
+
+// ============================================
+// ESTACIONAMENTOS E ESTRUTURA
+// ============================================
+
+model Parking {
+  id              String      @id @default(uuid())
+  name            String
+  cnpj            String?     @unique
+  address         String
+  city            String
+  state           String
+  zipCode         String
+  phone           String?
+  email           String?
+  totalSpots      Int         @default(0)
+  activeSpots     Int         @default(0)
+  
+  // Configurações
+  settings        Json?       // Configurações flexíveis em JSON
+  
+  // Relacionamentos
+  users           User[]
+  vehicles        Vehicle[]
+  checkIns        CheckIn[]
+  checkOuts       CheckOut[]
+  spots           ParkingSpot[]
+  pricingRules    PricingRule[]
+  monthlyPlans    MonthlyPlan[]
+  
+  // Metadados
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  isActive        Boolean     @default(true)
+  
+  @@index([cnpj])
+}
+
+model ParkingSpot {
+  id              String      @id @default(uuid())
+  parkingId       String
+  parking         Parking     @relation(fields: [parkingId], references: [id], onDelete: Cascade)
+  code            String      // Ex: "A-01", "B-15"
+  floor           Int?        // Andar (se aplicável)
+  section         String?     // Setor (TER, SUB, BAR, etc)
+  isReserved      Boolean     @default(false)
+  isOccupied      Boolean     @default(false)
+  vehicleId       String?     @unique
+  vehicle         Vehicle?    @relation(fields: [vehicleId], references: [id])
+  
+  // Relações
+  checkIns        CheckIn[]
+  monthlyPlans    MonthlyPlan[]  @relation("MonthlyPlanSpot")
+  
+  // Metadados
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  @@unique([parkingId, code])
+  @@index([parkingId])
+  @@index([vehicleId])
+}
+
+// ============================================
+// VEÍCULOS
+// ============================================
+
+enum VehicleType {
+  CARRO
+  MOTO
+  VAN
+  CAMINHAO
+  OUTRO
+}
+
+enum VehicleStatus {
+  ESTACIONADO
+  EM_MOVIMENTACAO
+  SOLICITADO_SAIDA
+  RESERVADO
+  ENTREGUE
+}
+
+model Vehicle {
+  id              String          @id @default(uuid())
+  plate           String          // Placa (Mercosul ou antiga)
+  brand           String?         // Marca
+  model           String
+  color           String?
+  year            Int?
+  type            VehicleType     @default(CARRO)
+  status          VehicleStatus   @default(ESTACIONADO)
+  
+  // Cliente
+  ownerId         String?
+  owner           User?           @relation(fields: [ownerId], references: [id])
+  ownerName       String?
+  ownerPhone      String?
+  ownerEmail      String?
+  ownerCpf        String?
+  
+  // Localização
+  spotId          String?
+  spot            ParkingSpot?    @relation
+  parkingId       String
+  parking         Parking         @relation(fields: [parkingId], references: [id])
+  
+  // Vistoria
+  inspectionPhotos Json?          // Array de URLs das fotos
+  fuelLevel       String?         // Nível de combustível
+  mileage         Int?            // Quilometragem
+  damages         Json?           // Avarias detectadas
+  
+  // Relacionamentos
+  checkIns        CheckIn[]
+  checkOuts       CheckOut[]
+  
+  // Metadados
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  
+  @@index([plate])
+  @@index([parkingId])
+  @@index([status])
+  @@index([spotId])
+}
+
+// ============================================
+// CHECK-IN E CHECK-OUT
+// ============================================
+
+model CheckIn {
+  id              String      @id @default(uuid())
+  vehicleId       String
+  vehicle         Vehicle     @relation(fields: [vehicleId], references: [id])
+  parkingId       String
+  parking         Parking     @relation(fields: [parkingId], references: [id])
+  manobristaId    String?
+  manobrista      User?       @relation("CheckInManobrista", fields: [manobristaId], references: [id])
+  spotId          String?
+  spot            ParkingSpot? @relation(fields: [spotId], references: [id])
+  
+  // Dados do check-in
+  ticketNumber    String      @unique
+  qrCode          String?     @unique
+  entryTime       DateTime    @default(now())
+  expectedExitTime DateTime?
+  
+  // Vistoria
+  inspectionData  Json?       // Dados completos da vistoria
+  
+  // Relacionamento com checkout
+  checkOut        CheckOut?
+  
+  // Metadados
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  @@index([vehicleId])
+  @@index([parkingId])
+  @@index([ticketNumber])
+  @@index([qrCode])
+}
+
+model CheckOut {
+  id              String      @id @default(uuid())
+  checkInId       String      @unique
+  checkIn         CheckIn     @relation(fields: [checkInId], references: [id])
+  vehicleId       String
+  vehicle         Vehicle     @relation(fields: [vehicleId], references: [id])
+  parkingId       String
+  parking         Parking     @relation(fields: [parkingId], references: [id])
+  manobristaId    String?
+  manobrista      User?       @relation("CheckOutManobrista", fields: [manobristaId], references: [id])
+  
+  // Dados do checkout
+  exitTime        DateTime    @default(now())
+  totalTime       Int         // Minutos
+  totalAmount     Decimal     @db.Decimal(10, 2)
+  paymentMethod   String?     // PIX, CARTAO, DINHEIRO, etc
+  paymentStatus   String      @default("PENDENTE") // PENDENTE, PAGO, CANCELADO
+  paymentId       String?     @unique // ID do pagamento
+  
+  // Relações
+  payment         Payment?    @relation(fields: [paymentId], references: [id])
+  
+  // Vistoria de saída
+  exitInspection  Json?       // Comparação com entrada
+  
+  // Metadados
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  @@index([vehicleId])
+  @@index([parkingId])
+  @@index([checkInId])
+  @@index([paymentStatus])
+}
+
+// ============================================
+// PAGAMENTOS
+// ============================================
+
+enum PaymentMethod {
+  PIX
+  CARTAO_CREDITO
+  CARTAO_DEBITO
+  DINHEIRO
+  VOUCHER
+  CONVENIO
+  MENSALISTA
+}
+
+enum PaymentStatus {
+  PENDENTE
+  PROCESSANDO
+  APROVADO
+  RECUSADO
+  CANCELADO
+  ESTORNADO
+}
+
+model Payment {
+  id              String          @id @default(uuid())
+  checkOutId      String?         @unique
+  checkOut        CheckOut?       @relation
+  amount          Decimal         @db.Decimal(10, 2)
+  method          PaymentMethod
+  status          PaymentStatus   @default(PENDENTE)
+  
+  // Dados do pagamento
+  externalId      String?         // ID do gateway de pagamento
+  transactionId  String?          // ID da transação
+  pixQrCode       String?         // QR Code PIX
+  pixCopyPaste    String?         // Chave PIX copia e cola
+  
+  // Dados do cartão (tokenizado)
+  cardLastDigits  String?
+  cardBrand       String?
+  
+  // Metadados
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+  paidAt          DateTime?
+  
+  @@index([checkOutId])
+  @@index([status])
+  @@index([externalId])
+}
+
+// ============================================
+// PRECIFICAÇÃO
+// ============================================
+
+model PricingRule {
+  id              String      @id @default(uuid())
+  parkingId       String
+  parking         Parking     @relation(fields: [parkingId], references: [id], onDelete: Cascade)
+  name            String      // Ex: "Avulso", "Mensalista", "Bar do Alemão"
+  type            String      // "HOURLY", "FIXED", "DAILY"
+  
+  // Configuração flexível em JSON
+  config          Json        // { first20min: 5, firstHour: 20, additionalHour: 10 }
+  
+  isActive        Boolean     @default(true)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+  
+  @@index([parkingId])
+}
+
+// ============================================
+// MENSALISTAS
+// ============================================
+
+enum MonthlyPlanStatus {
+  ATIVO
+  SUSPENSO
+  CANCELADO
+  VENCIDO
+}
+
+model MonthlyPlan {
+  id              String              @id @default(uuid())
+  parkingId       String
+  parking         Parking             @relation(fields: [parkingId], references: [id], onDelete: Cascade)
+  userId          String?
+  user            User?               @relation("MonthlyPlanUser", fields: [userId], references: [id])
+  
+  // Dados do plano
+  name            String              // Nome do cliente/empresa
+  cpfCnpj         String?
+  phone           String
+  email           String?
+  spotId          String?             // Vaga fixa (se aplicável)
+  spot            ParkingSpot?        @relation("MonthlyPlanSpot", fields: [spotId], references: [id])
+  
+  // Valores
+  monthlyAmount   Decimal             @db.Decimal(10, 2)
+  status          MonthlyPlanStatus   @default(ATIVO)
+  
+  // Datas
+  startDate       DateTime
+  endDate         DateTime?
+  lastPaymentDate DateTime?
+  nextPaymentDate DateTime?
+  
+  // Metadados
+  createdAt       DateTime            @default(now())
+  updatedAt       DateTime            @updatedAt
+  
+  @@index([parkingId])
+  @@index([userId])
+  @@index([status])
+}
+
+// ============================================
+// RELATÓRIOS E AUDITORIA
+// ============================================
+
+model AuditLog {
+  id              String      @id @default(uuid())
+  userId          String?
+  action          String      // CREATE, UPDATE, DELETE, LOGIN, etc
+  entity          String      // User, Vehicle, CheckIn, etc
+  entityId        String?
+  changes         Json?       // Dados alterados
+  ipAddress       String?
+  userAgent       String?
+  createdAt       DateTime    @default(now())
+  
+  @@index([userId])
+  @@index([entity, entityId])
+  @@index([createdAt])
+}
